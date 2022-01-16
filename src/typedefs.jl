@@ -118,12 +118,17 @@ mutable struct Graph
 end
 
 mutable struct Parameters
+    seed::Int
     max_time::Int
     verbose::Bool
     plot::Bool
 end
 
-function set_maximum_time(params::Parameters, max_time::Int)
+function set_seed(params::Parameters, seed::Int)
+    params.seed = seed
+end
+
+function set_max_time(params::Parameters, max_time::Int)
     params.max_time = max_time
 end
 
@@ -137,6 +142,8 @@ end
 
 mutable struct Results
     cpu::Float64
+    cpugraph::Float64
     objvalue::Float64
+    dualobjvalue::Float64
     solution
 end

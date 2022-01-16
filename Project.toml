@@ -1,6 +1,11 @@
 [deps]
+ArgParse = "c7e460c6-2fb9-53a9-8c5b-16f535851c63"
 CPLEX = "a076750e-1247-5638-91d2-ce28b192dca0"
+ChangesOfVariables = "9e997f8a-9a97-42d5-a9f1-ce6bfc15e2c0"
+Distances = "b4f34e82-e78d-54a5-968a-f98e89d6e8f7"
 GeometryTypes = "4d00f742-c7ba-57c2-abde-4428a4b178cb"
+Grisu = "42e2da0e-8278-4e71-bc24-59509adca0fe"
 JuMP = "4076af6c-e467-56ae-b986-b466b2749572"
 LazySets = "b4f0291d-fe17-52bc-9479-3d1a343d9043"
 Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
+Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"

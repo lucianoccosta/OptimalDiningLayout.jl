@@ -17,11 +17,33 @@ function create_conflicting_graph(data::Data)
         []                  # edges
     )
 
+    define_room_boundary_walls(data)
+
     load_sitting_configurations(data, auxdata, graph)
 
     build_graph_incompatible_sitting_configutions(data, auxdata, graph)
 
     return graph, auxdata
+end
+
+function define_room_boundary_walls(data::Data)
+
+    if !isempty(data.boundarywalls)
+        return
+    end
+
+    # ================= Room information =============
+    btltcr = [0.0, 0.0]
+    tpltcr = [0.0, data.nrows * data.length_side_table]
+    btrtcr = [data.ncols * data.length_side_table, 0]
+    tprtcr = [data.ncols * data.length_side_table, data.nrows * data.length_side_table]
+
+    leftwall = LineSegment([btltcr[1], btltcr[2]], [tpltcr[1], tpltcr[2]])
+    bottomwall = LineSegment([btltcr[1], btltcr[2]], [btrtcr[1], btrtcr[2]])
+    rightwall = LineSegment([btrtcr[1], btrtcr[2]], [tprtcr[1], tprtcr[2]])
+    topwall = LineSegment([tpltcr[1], tpltcr[2]], [tprtcr[1], tprtcr[2]])
+
+    data.boundarywalls = [leftwall, bottomwall, rightwall, topwall]
 end
 
 function load_sitting_configurations(data::Data, auxdata::AuxData, graph::Graph)
@@ -41,7 +63,9 @@ function load_sitting_configurations(data::Data, auxdata::AuxData, graph::Graph)
 
     load_rectangular_vertical_table(data, auxdata, graph)
 
-    println("$(graph.nconfigurations) sitting configurations loaded!")
+    if params.verbose
+        println("$(graph.nconfigurations) sitting configurations loaded!")
+    end
 end
 
 function load_square_table(data::Data, auxdata::AuxData, graph::Graph)
@@ -94,12 +118,18 @@ function load_rectangular_vertical_table(data::Data, auxdata::AuxData, graph::Gr
     end
 end
 
-function create_sitting_configuration(data::Data, auxdata::AuxData, graph::Graph,
-    type, blocks, npersons, sitting_axis, corners)
+function create_sitting_configuration(data::Data,
+    auxdata::AuxData,
+    graph::Graph,
+    type,
+    blocks,
+    npersons,
+    sitting_axis,
+    corners)
 
     graph.nconfigurations += 1
 
-    if table_intersects_wall(data, corners)
+    if table_intersects_plexiglass_wall(data, corners)
         graph.nconfigurations -= 1
         return false
     end
@@ -109,6 +139,11 @@ function create_sitting_configuration(data::Data, auxdata::AuxData, graph::Graph
     seating_sense = get_seating_sense(type, sitting_axis)
  
     if table_intersects_wall_in_sitting_axis(data, corners, sitting_locations)
+        graph.nconfigurations -= 1
+        return false
+    end
+
+    if someone_sitting_alongside_wall(data, corners, sitting_locations)
         graph.nconfigurations -= 1
         return false
     end
@@ -276,7 +311,9 @@ function build_graph_incompatible_sitting_configutions(data::Data,
 
     distancing_restriction(data, auxdata, graph)
 
-    println("$(length(graph.edges)[1]) incompatible pairs!")
+    if params.verbose
+        println("$(length(graph.edges)[1]) incompatible pairs!")
+    end
 end
 
 function same_block(data::Data, auxdata::AuxData, graph::Graph)
@@ -464,7 +501,7 @@ function collect_sitting_patterns_within_neighborhood(data::Data, auxdata::AuxDa
     return candidates
 end
 
-function table_intersects_wall(data::Data, corners)
+function table_intersects_plexiglass_wall(data::Data, corners)
 
     c1, c2, c3, c4 = corners
 
@@ -539,6 +576,30 @@ function table_intersects_wall_in_sitting_axis(data::Data, corners, sitting_loca
     return false
 end
 
+function someone_sitting_alongside_wall(data::Data, corners, sitting_locations)
+
+    c1, c2, c3, c4 = corners # Corners of the table
+    side1 = LineSegment([c1[1], c1[2]], [c2[1], c2[2]])
+    side2 = LineSegment([c2[1], c2[2]], [c3[1], c3[2]])
+    side3 = LineSegment([c3[1], c3[2]], [c4[1], c4[2]])
+    side4 = LineSegment([c1[1], c1[2]], [c4[1], c4[2]])
+
+    sides = [side1, side2, side3, side4]
+
+    for wall in data.boundarywalls
+        for side in sides
+            # 1) Check if some side of the table is parallel to one of the boundary walls
+            # 2) If the side of the table is parallel, check if there is someone sitting along this side of the table
+            if parallel_segment_intersects(wall, side) && 
+                at_least_one_person_sitting_along_table_side(side, sitting_locations)
+                return true
+            end
+        end
+    end
+
+    return false
+end
+
 function parallel_segment_intersects(a::LineSegment, b::LineSegment)
 
     # verify if the two endpoints of a segments belong to the other segment.
@@ -568,8 +629,8 @@ end
 
 function at_least_one_person_sitting_along_table_side(side::LineSegment, sitting_locations)
 
-    for table in sitting_locations
-        if collect(table) in side
+    for person in sitting_locations
+        if collect(person) in side
             return true
         end
     end

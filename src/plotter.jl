@@ -33,7 +33,7 @@ function plot_sitting_configuration(data::Data, configuration)
     savefig("plots/layout_table$(configuration.id)$format")
 end
 
-function plotter(data::Data, graph::Graph, sol)
+function plotter(filename::String, data::Data, graph::Graph, sol)
 
     x = []
     y = []
@@ -57,7 +57,8 @@ function plotter(data::Data, graph::Graph, sol)
         xaxis = :white,
         yaxis = :white,
         seriestype = :scatter,
-        # aspect_ratio=:equal,
+        aspect_ratio=:equal,
+        size = (400, 400), # Force the plot to have the same length on both sides
         crop = true,
         primary = false, # remove labels
         # title = data.instance_name,
@@ -76,7 +77,7 @@ function plotter(data::Data, graph::Graph, sol)
                         graph.sittingconfigs[u].corners[3],
                         graph.sittingconfigs[u].corners[4]),
                         # annotations = ([x], [y], u), # Add labels to the tables
-            opacity=.5, primary=false)
+            opacity=.5, primary=false, legend = false, dpi=720)
     end
 
     if length(data.plexiglass) > 0
@@ -89,19 +90,19 @@ function plotter(data::Data, graph::Graph, sol)
         end
     end
 
-    if length(data.boundarywalls) > 0
-        seg = data.boundarywalls[1]
-        plot!(color = :dimgrey, [seg.x1, seg.x2], [seg.y1, seg.y2], legend = false, dpi=720)
+    # if length(data.boundarywalls) > 0
+    #     seg = data.boundarywalls[1]
+    #     plot!(color = :dimgrey, [seg.x1, seg.x2], [seg.y1, seg.y2], legend = false, dpi=720)
 
-        for i in 2:length(data.boundarywalls)
-            seg = data.boundarywalls[i]
-            plot!(color = :dimgrey, [seg.x1, seg.x2], [seg.y1, seg.y2], legend = false, dpi=720)
-        end
-    end
+    #     for i in 2:length(data.boundarywalls)
+    #         seg = data.boundarywalls[i]
+    #         plot!(color = :dimgrey, [seg.x1, seg.x2], [seg.y1, seg.y2], legend = false, dpi=720)
+    #     end
+    # end
 
     # format = ".pdf"
     format = ".png"
-    savefig("plots/$(data.instance_name)$format")
+    savefig("plots/$filename$format")
 end
 
 function plot_current_solution_with_cliques(data::Data, graph::Graph, sol, cliques)
